@@ -68,7 +68,7 @@ function SetupPhase({ onStart }: { onStart: (names: string[], uc: number, mw: nu
   const maxInfiltrators = Math.floor((playerCount - 1) / 2);
 
   function handleConfigNext() {
-    setNames(Array.from({ length: playerCount }, (_, i) => `Player ${i + 1}`));
+    setNames(Array.from({ length: playerCount }, () => ""));
     setStep("names");
   }
 
@@ -97,8 +97,7 @@ function SetupPhase({ onStart }: { onStart: (names: string[], uc: number, mw: nu
             Back
           </Button>
           <Button
-            onClick={() => onStart(names, numUndercover, numMrWhite)}
-            disabled={names.some((n) => !n.trim())}
+            onClick={() => onStart(names.map((n, i) => n.trim() || `Player ${i + 1}`), numUndercover, numMrWhite)}
             className="flex-1"
           >
             Start Game
