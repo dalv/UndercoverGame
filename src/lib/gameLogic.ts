@@ -20,12 +20,15 @@ export function createGame(
   const [civilianWord, undercoverWord] =
     Math.random() < 0.5 ? pair : [pair[1], pair[0]];
 
-  // Assign roles
+  // Assign roles — ensure Mr. White is never first (so they don't describe first)
   const roles: Role[] = [];
   for (let i = 0; i < numUndercover; i++) roles.push("undercover");
   for (let i = 0; i < numMrWhite; i++) roles.push("mrwhite");
   while (roles.length < playerNames.length) roles.push("civilian");
-  const shuffledRoles = shuffle(roles);
+  let shuffledRoles = shuffle(roles);
+  while (shuffledRoles[0] === "mrwhite") {
+    shuffledRoles = shuffle(roles);
+  }
 
   const players: Player[] = playerNames.map((name, i) => ({
     id: i,

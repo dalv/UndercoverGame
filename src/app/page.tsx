@@ -216,24 +216,30 @@ function DistributePhase({
         </>
       ) : (
         <>
-          <p className="text-white/50 text-sm mb-1">
-            {player.name}, you are:
-          </p>
-          <div className="text-4xl mb-2">{roleEmoji(player.role)}</div>
-          <p className="text-lg font-semibold text-indigo-400 mb-4">
-            {roleName(player.role)}
-          </p>
-          {player.word ? (
-            <div className="bg-white/10 rounded-xl p-4 mb-6">
-              <p className="text-sm text-white/50 mb-1">Your word:</p>
-              <p className="text-2xl font-bold">{player.word}</p>
-            </div>
-          ) : (
-            <div className="bg-white/10 rounded-xl p-4 mb-6">
-              <p className="text-lg text-white/60">
-                You have no word. Bluff your way through!
+          {player.role === "mrwhite" ? (
+            <>
+              <p className="text-white/50 text-sm mb-1">
+                {player.name}, you are:
               </p>
-            </div>
+              <div className="text-4xl mb-2">{roleEmoji(player.role)}</div>
+              <p className="text-lg font-semibold text-purple-400 mb-4">
+                Mr. White
+              </p>
+              <div className="bg-white/10 rounded-xl p-4 mb-6">
+                <p className="text-lg text-white/60">
+                  You have no word. Bluff your way through!
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-white/50 text-sm mb-2">
+                {player.name}, your word is:
+              </p>
+              <div className="bg-white/10 rounded-xl p-4 mb-6">
+                <p className="text-2xl font-bold">{player.word}</p>
+              </div>
+            </>
           )}
           <p className="text-xs text-white/30 mb-4">
             Memorize your word, then pass the phone.
