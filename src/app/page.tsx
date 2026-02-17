@@ -9,7 +9,6 @@ import {
 import {
   createGame,
   checkWinCondition,
-  tallyVotes,
   roleName,
   roleEmoji,
 } from "@/lib/gameLogic";
@@ -306,109 +305,49 @@ function DescribePhase({
   );
 }
 
-// ─── Discussion Phase ───────────────────────────────────
-
-function DiscussPhase({ onDone }: { onDone: () => void }) {
-  return (
-    <Card className="text-center">
-      <h2 className="text-xl font-bold mb-2">Discussion Time</h2>
-      <p className="text-white/60 text-sm mb-6">
-        Debate who you think the Undercover or Mr. White might be.
-        <br />
-        Build alliances. Question each other. Be suspicious!
-      </p>
-      <Button onClick={onDone}>Proceed to Vote</Button>
-    </Card>
-  );
-}
-
-// ─── Vote Phase ─────────────────────────────────────────
+// ─── Vote Phase (simple pick) ───────────────────────────
 
 function VotePhase({
   players,
-  votes,
-  onVote,
-  onDone,
+  onEliminate,
 }: {
   players: Player[];
-  votes: Record<number, number>;
-  onVote: (voterId: number, targetId: number) => void;
-  onDone: () => void;
+  onEliminate: (playerId: number) => void;
 }) {
   const alive = players.filter((p) => p.alive);
-  const [currentVoterIdx, setCurrentVoterIdx] = useState(0);
-  const [voted, setVoted] = useState(false);
-  const [selectedTarget, setSelectedTarget] = useState<number | null>(null);
-
-  const currentVoter = alive[currentVoterIdx];
-  const isLast = currentVoterIdx === alive.length - 1;
-
-  if (voted && isLast) {
-    return (
-      <Card className="text-center">
-        <h2 className="text-xl font-bold mb-4">All Votes Cast</h2>
-        <Button onClick={onDone}>Reveal Results</Button>
-      </Card>
-    );
-  }
-
-  if (voted) {
-    return (
-      <Card className="text-center">
-        <p className="text-white/50 text-sm mb-2">Pass the phone to:</p>
-        <h2 className="text-2xl font-bold mb-6">{alive[currentVoterIdx + 1].name}</h2>
-        <Button
-          onClick={() => {
-            setCurrentVoterIdx((i) => i + 1);
-            setVoted(false);
-            setSelectedTarget(null);
-          }}
-        >
-          Ready to Vote
-        </Button>
-      </Card>
-    );
-  }
+  const [selected, setSelected] = useState<number | null>(null);
 
   return (
     <Card>
-      <p className="text-xs text-white/40 text-center mb-1">Voting</p>
-      <h2 className="text-xl font-bold text-center mb-4">
-        {currentVoter.name}, who do you vote to eliminate?
-      </h2>
+      <h2 className="text-xl font-bold text-center mb-2">Time to Vote</h2>
+      <p className="text-white/60 text-sm text-center mb-4">
+        Discuss and debate, then select who to eliminate.
+      </p>
       <div className="space-y-2 mb-4">
-        {alive
-          .filter((p) => p.id !== currentVoter.id)
-          .map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setSelectedTarget(p.id)}
-              className={`w-full px-4 py-3 rounded-xl text-left transition-all cursor-pointer ${
-                selectedTarget === p.id
-                  ? "bg-red-600/30 border-red-500 border"
-                  : "bg-white/5 border border-white/10 hover:bg-white/10"
-              }`}
-            >
-              {p.name}
-            </button>
-          ))}
+        {alive.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setSelected(p.id)}
+            className={`w-full px-4 py-3 rounded-xl text-left transition-all cursor-pointer ${
+              selected === p.id
+                ? "bg-red-600/30 border-red-500 border"
+                : "bg-white/5 border border-white/10 hover:bg-white/10"
+            }`}
+          >
+            {p.name}
+          </button>
+        ))}
       </div>
       <Button
         variant="danger"
-        disabled={selectedTarget === null}
+        disabled={selected === null}
         onClick={() => {
-          if (selectedTarget !== null) {
-            onVote(currentVoter.id, selectedTarget);
-            setVoted(true);
-          }
+          if (selected !== null) onEliminate(selected);
         }}
         className="w-full"
       >
-        Confirm Vote
+        Eliminate
       </Button>
-      <div className="mt-3 text-xs text-white/30 text-center">
-        {currentVoterIdx + 1} / {alive.length}
-      </div>
     </Card>
   );
 }
@@ -578,16 +517,7 @@ export default function Home() {
           onNext={() =>
             updateGame((g) => ({ currentPlayerIndex: g.currentPlayerIndex + 1 }))
           }
-          onDone={() => updateGame(() => ({ phase: "discuss" as GamePhase }))}
-        />
-      );
-
-    case "discuss":
-      return (
-        <DiscussPhase
-          onDone={() =>
-            updateGame(() => ({ phase: "vote" as GamePhase, votes: {} }))
-          }
+          onDone={() => updateGame(() => ({ phase: "vote" as GamePhase }))}
         />
       );
 
@@ -595,50 +525,33 @@ export default function Home() {
       return (
         <VotePhase
           players={game.players}
-          votes={game.votes}
-          onVote={(voterId, targetId) =>
-            updateGame((g) => ({
-              votes: { ...g.votes, [voterId]: targetId },
-            }))
-          }
-          onDone={() => {
-            // Tally votes and eliminate
-            const eliminatedId = tallyVotes(game);
+          onEliminate={(playerId) => {
             const updatedPlayers = game.players.map((p) =>
-              p.id === eliminatedId ? { ...p, alive: false } : p
+              p.id === playerId ? { ...p, alive: false } : p
             );
-            const eliminated = game.players.find((p) => p.id === eliminatedId)!;
+            const eliminated = game.players.find((p) => p.id === playerId)!;
 
             // If Mr. White, give them a chance to guess
             if (eliminated.role === "mrwhite") {
               setGame({
                 ...game,
                 players: updatedPlayers,
-                eliminatedPlayerId: eliminatedId,
+                eliminatedPlayerId: playerId,
                 phase: "mrwhite-guess",
               });
               return;
             }
 
-            // Check win condition with updated players
+            // Check win condition
             const tempState = { ...game, players: updatedPlayers };
             const winner = checkWinCondition(tempState);
-            if (winner) {
-              setGame({
-                ...game,
-                players: updatedPlayers,
-                eliminatedPlayerId: eliminatedId,
-                winner,
-                phase: "reveal",
-              });
-            } else {
-              setGame({
-                ...game,
-                players: updatedPlayers,
-                eliminatedPlayerId: eliminatedId,
-                phase: "reveal",
-              });
-            }
+            setGame({
+              ...game,
+              players: updatedPlayers,
+              eliminatedPlayerId: playerId,
+              winner,
+              phase: "reveal",
+            });
           }}
         />
       );

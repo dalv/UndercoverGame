@@ -13,7 +13,6 @@ export type GamePhase =
   | "names"           // Enter player names
   | "distribute"      // Pass phone to see your word
   | "describe"        // Each player describes their word
-  | "discuss"         // Free discussion
   | "vote"            // Vote to eliminate
   | "reveal"          // Show who was eliminated & their role
   | "mrwhite-guess"   // Mr. White gets a last chance to guess
@@ -27,7 +26,7 @@ export interface GameState {
   numUndercover: number;
   numMrWhite: number;
   currentPlayerIndex: number; // For distribute / describe phases
-  votes: Record<number, number>; // voterId -> targetId
+  votes: Record<number, number>;
   eliminatedPlayerId: number | null;
   winner: "civilians" | "infiltrators" | "mrwhite" | null;
   round: number;
